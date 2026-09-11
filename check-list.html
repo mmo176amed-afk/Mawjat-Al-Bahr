@@ -57,7 +57,7 @@
             </div>
             <div class="form-group">
                 <label>رقم الهاتف (كلمة السر) *</label>
-                <input type="tel" id="phoneInput" placeholder="(05) 55 66 77 88">
+                <input type="tel" id="phoneInput" placeholder="0554455667" maxlength="10" oninput="formatPhoneInput(this)">
             </div>
         </div>
         <button id="checkBtn" class="btn"><i class="fa-solid fa-magnifying-glass"></i> عرض قائمتي</button>
@@ -84,6 +84,15 @@
 
 <script>
     const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxFEK5e7y2nCr_J99P8vbh74u5THu-6DQ6-SDT-nqxWZ-c_XuI8GRhNz1Bx412zlQ_fnA/exec";
+
+    function formatPhoneInput(input) {
+        let val = input.value.replace(/[^\d]/g, '');
+        if (val.length > 0 && val[0] !== '0') {
+            val = '0' + val;
+        }
+        if (val.length > 10) val = val.substring(0, 10);
+        input.value = val;
+    }
 
     const clubSelect = document.getElementById('clubInput');
     const coachSelect = document.getElementById('coachInput');
