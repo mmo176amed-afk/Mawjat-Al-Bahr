@@ -199,8 +199,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label>رقم الهاتف *</label>
-                        <input type="tel" id="phone" placeholder="0554455667" maxlength="10" required oninput="formatPhoneInput(this)">
+                        <label>رقم الهاتف * <span style="font-weight:normal; color:#dc2626; font-size:0.78rem;">(بدون صفر في البداية)</span></label>
+                        <input type="tel" id="phone" placeholder="666925680" required>
                     </div>
 
                     <div class="form-group">
@@ -391,15 +391,6 @@
         let centerTimeout = null;
         let studentTimeout = null;
         let currentCoachesList = [];
-
-        function formatPhoneInput(input) {
-            let val = input.value.replace(/[^\d]/g, '');
-            if (val.length > 0 && val[0] !== '0') {
-                val = '0' + val;
-            }
-            if (val.length > 10) val = val.substring(0, 10);
-            input.value = val;
-        }
 
         const lockedFields = ['club', 'coach', 'phone', 'email', 'chaperone', 'parentName', 'birth', 'wilaya'];
 
