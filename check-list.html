@@ -83,7 +83,7 @@
 </div>
 
 <script>
-    const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI9s9ngRvWrw5Sjb2__2RrbtyCoW4eSaOW7mI7mwyWV1G9S9ll0ETvbMdp7BoQgAqWRw/exec";
+    const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxFEK5e7y2nCr_J99P8vbh74u5THu-6DQ6-SDT-nqxWZ-c_XuI8GRhNz1Bx412zlQ_fnA/exec";
 
     const clubSelect = document.getElementById('clubInput');
     const coachSelect = document.getElementById('coachInput');
@@ -93,7 +93,15 @@
     fetch(`${SCRIPT_WEB_APP_URL}?action=getAllCenters`)
         .then(r => r.json())
         .then(res => {
+            console.log('getAllCenters response:', res);
             const centers = res.centers || [];
+            if (centers.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = res.error ? ('خطأ: ' + res.error) : 'لا توجد مراكز مسجلة في الشيت';
+                clubSelect.appendChild(opt);
+                return;
+            }
             centers.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c;
@@ -101,7 +109,13 @@
                 clubSelect.appendChild(opt);
             });
         })
-        .catch(() => {});
+        .catch(err => {
+            console.error('فشل تحميل المراكز:', err);
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'تعذر الاتصال بالخادم';
+            clubSelect.appendChild(opt);
+        });
 
     // 2. عند اختيار المركز، نجلب قائمة المدربين الخاصة به فقط
     clubSelect.addEventListener('change', () => {
