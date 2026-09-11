@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>التأكد من قائمة المشاركين</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    * { box-sizing:border-box; margin:0; padding:0; font-family:'Tajawal',sans-serif; }
+    body { background:#f1f5f9; color:#334155; padding:20px 15px 50px; }
+    .header { background:linear-gradient(135deg,#0369a1 0%,#0f172a 100%); color:white; padding:20px 15px; text-align:center; border-radius:14px; margin-bottom:20px; }
+    .header h1 { font-size:1.25rem; font-weight:800; }
+    .container { max-width:1000px; margin:0 auto; }
+    .card { background:white; border-radius:16px; padding:22px; box-shadow:0 10px 25px rgba(0,0,0,0.06); border:1px solid #e2e8f0; margin-bottom:20px; }
+    .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+    label { font-size:0.86rem; font-weight:700; color:#475569; display:block; margin-bottom:5px; }
+    input { width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid #cbd5e1; font-size:0.95rem; outline:none; background:#f8fafc; }
+    input:focus { border-color:#0284c7; background:#fff; }
+    .autocomplete-box { position:relative; }
+    .suggestions { position:absolute; top:100%; right:0; left:0; background:white; border:1px solid #cbd5e1; border-radius:8px; max-height:180px; overflow-y:auto; z-index:20; display:none; box-shadow:0 6px 15px rgba(0,0,0,0.1); }
+    .suggestions div { padding:9px 12px; cursor:pointer; font-size:0.9rem; }
+    .suggestions div:hover { background:#eff6ff; }
+    .btn { width:100%; margin-top:18px; padding:13px; background:#0284c7; color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:8px; }
+    .btn:hover { background:#0369a1; }
+    .btn:disabled { background:#94a3b8; }
+    .error-box { display:none; text-align:center; padding:14px; background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; margin-top:15px; color:#991b1b; font-weight:700; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
+    .stat-box { background:white; border:1px solid #e2e8f0; border-radius:12px; padding:16px; text-align:center; }
+    .stat-box .num { font-size:1.6rem; font-weight:800; color:#0284c7; }
+    .stat-box .lbl { font-size:0.82rem; color:#64748b; font-weight:700; margin-top:4px; }
+    table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+    th, td { padding:9px 8px; text-align:center; border-bottom:1px solid #edf2f7; }
+    th { background:#f1f5f9; color:#0369a1; font-weight:800; position:sticky; top:0; }
+    tr:hover { background:#f8fafc; }
+    .table-wrap { overflow-x:auto; }
+    .back-link { display:inline-block; margin-bottom:15px; color:#0284c7; font-weight:700; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="container">
+    <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-right"></i> رجوع للتسجيل</a>
+    <div class="header">
+        <h1><i class="fa-solid fa-clipboard-check"></i> التأكد من قائمة المشاركين</h1>
+    </div>
+
+    <div id="loginCard" class="card">
+        <div class="form-grid">
+            <div class="form-group autocomplete-box">
+                <label>إسم المركز / النادي *</label>
+                <input type="text" id="clubInput" placeholder="اكتب اسم المركز..." autocomplete="off">
+                <div id="clubSuggestions" class="suggestions"></div>
+            </div>
+            <div class="form-group">
+                <label>إسم ولقب المدرب *</label>
+                <input type="text" id="coachInput" placeholder="اسم ولقب المدرب...">
+            </div>
+            <div class="form-group">
+                <label>رقم الهاتف (كلمة السر) *</label>
+                <input type="tel" id="phoneInput" placeholder="(05) 55 66 77 88">
+            </div>
+        </div>
+        <button id="checkBtn" class="btn"><i class="fa-solid fa-magnifying-glass"></i> عرض قائمتي</button>
+        <div id="errBox" class="error-box"></div>
+    </div>
+
+    <div id="resultCard" style="display:none;">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اللقب</th><th>الاسم</th><th>تاريخ الميلاد</th><th>المستوى</th>
+                            <th>نوع المشاركة</th><th>لعبة الذكاء</th><th>فلاش أنزان</th><th>الأكواب السريعة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI9s9ngRvWrw5Sjb2__2RrbtyCoW4eSaOW7mI7mwyWV1G9S9ll0ETvbMdp7BoQgAqWRw/exec";
+    let centersList = [];
+    let clubTimeout = null;
+
+    fetch(`${SCRIPT_WEB_APP_URL}?action=getAllCenters`)
+        .then(r => r.json())
+        .then(res => { centersList = res.centers || []; })
+        .catch(() => {});
+
+    const clubInput = document.getElementById('clubInput');
+    const suggestBox = document.getElementById('clubSuggestions');
+
+    clubInput.addEventListener('input', () => {
+        clearTimeout(clubTimeout);
+        const val = clubInput.value.trim().toLowerCase();
+        if (val.length < 1) { suggestBox.style.display = 'none'; return; }
+        clubTimeout = setTimeout(() => {
+            const matches = centersList.filter(c => c.toLowerCase().includes(val)).slice(0, 8);
+            if (matches.length > 0) {
+                suggestBox.innerHTML = matches.map(m => `<div onclick="selectClub('${m.replace(/'/g,"\\'")}')">${m}</div>`).join('');
+                suggestBox.style.display = 'block';
+            } else {
+                suggestBox.style.display = 'none';
+            }
+        }, 150);
+    });
+
+    function selectClub(name) {
+        clubInput.value = name;
+        suggestBox.style.display = 'none';
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.autocomplete-box')) suggestBox.style.display = 'none';
+    });
+
+    document.getElementById('checkBtn').addEventListener('click', () => {
+        const club = clubInput.value.trim();
+        const coach = document.getElementById('coachInput').value.trim();
+        const phone = document.getElementById('phoneInput').value.trim();
+        const errBox = document.getElementById('errBox');
+        errBox.style.display = 'none';
+
+        if (!club || !coach || !phone) {
+            errBox.innerText = '⚠️ يرجى تعبئة جميع الحقول';
+            errBox.style.display = 'block';
+            return;
+        }
+
+        const btn = document.getElementById('checkBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التحقق...';
+
+        fetch(`${SCRIPT_WEB_APP_URL}?action=verifyCoachList&club=${encodeURIComponent(club)}&coach=${encodeURIComponent(coach)}&phone=${encodeURIComponent(phone)}`)
+            .then(r => r.json())
+            .then(res => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> عرض قائمتي';
+
+                if (!res.found) {
+                    if (res.error === 'wrongphone') {
+                        errBox.innerText = '❌ رقم هاتفك خاطئ، لا نستطيع أن نعطيك القائمة. تأكد من الرقم.';
+                    } else {
+                        errBox.innerText = '❌ لم يتم العثور على مركز أو مدرب بهذا الاسم.';
+                    }
+                    errBox.style.display = 'block';
+                    document.getElementById('resultCard').style.display = 'none';
+                    return;
+                }
+
+                renderResults(res);
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> عرض قائمتي';
+                errBox.innerText = '❌ حدث خطأ أثناء الاتصال، حاول مجدداً.';
+                errBox.style.display = 'block';
+            });
+    });
+
+    function renderResults(res) {
+        const s = res.stats;
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-box"><div class="num">${s.total}</div><div class="lbl">إجمالي المشاركين</div></div>
+            <div class="stat-box"><div class="num">${s.presentiel}</div><div class="lbl">حضوري</div></div>
+            <div class="stat-box"><div class="num">${s.online}</div><div class="lbl">أون لاين</div></div>
+            <div class="stat-box"><div class="num">${s.smartGames}</div><div class="lbl">ألعاب الذكاء</div></div>
+            <div class="stat-box"><div class="num">${s.cups}</div><div class="lbl">الأكواب السريعة</div></div>
+            <div class="stat-box"><div class="num">${s.flashAnzan}</div><div class="lbl">فلاش أنزان</div></div>
+        `;
+
+        const body = document.getElementById('studentsBody');
+        body.innerHTML = res.students.map(st => `
+            <tr>
+                <td>${st.lastName}</td>
+                <td>${st.firstName}</td>
+                <td>${st.birth}</td>
+                <td>${st.level || '-'}</td>
+                <td>${st.attendanceType}</td>
+                <td>${st.smartGame || 'بدون مشاركة'}</td>
+                <td>${st.flashAnzan ? '✅ نعم' : '❌ لا'}</td>
+                <td>${st.cups ? '✅ نعم' : '❌ لا'}</td>
+            </tr>
+        `).join('');
+
+        document.getElementById('resultCard').style.display = 'block';
+    }
+</script>
+</body>
+</html>
