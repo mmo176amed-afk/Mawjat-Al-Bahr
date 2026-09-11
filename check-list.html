@@ -15,12 +15,9 @@
     .card { background:white; border-radius:16px; padding:22px; box-shadow:0 10px 25px rgba(0,0,0,0.06); border:1px solid #e2e8f0; margin-bottom:20px; }
     .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
     label { font-size:0.86rem; font-weight:700; color:#475569; display:block; margin-bottom:5px; }
-    input { width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid #cbd5e1; font-size:0.95rem; outline:none; background:#f8fafc; }
-    input:focus { border-color:#0284c7; background:#fff; }
-    .autocomplete-box { position:relative; }
-    .suggestions { position:absolute; top:100%; right:0; left:0; background:white; border:1px solid #cbd5e1; border-radius:8px; max-height:180px; overflow-y:auto; z-index:20; display:none; box-shadow:0 6px 15px rgba(0,0,0,0.1); }
-    .suggestions div { padding:9px 12px; cursor:pointer; font-size:0.9rem; }
-    .suggestions div:hover { background:#eff6ff; }
+    input, select { width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid #cbd5e1; font-size:0.95rem; outline:none; background:#f8fafc; }
+    input:focus, select:focus { border-color:#0284c7; background:#fff; }
+    select:disabled { background:#e2e8f0; cursor:not-allowed; color:#64748b; }
     .btn { width:100%; margin-top:18px; padding:13px; background:#0284c7; color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:8px; }
     .btn:hover { background:#0369a1; }
     .btn:disabled { background:#94a3b8; }
@@ -46,14 +43,17 @@
 
     <div id="loginCard" class="card">
         <div class="form-grid">
-            <div class="form-group autocomplete-box">
+            <div class="form-group">
                 <label>إسم المركز / النادي *</label>
-                <input type="text" id="clubInput" placeholder="اكتب اسم المركز..." autocomplete="off">
-                <div id="clubSuggestions" class="suggestions"></div>
+                <select id="clubInput">
+                    <option value="">-- اختر المركز --</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>إسم ولقب المدرب *</label>
-                <input type="text" id="coachInput" placeholder="اسم ولقب المدرب...">
+                <select id="coachInput" disabled>
+                    <option value="">-- اختر المركز أولاً --</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>رقم الهاتف (كلمة السر) *</label>
@@ -84,44 +84,78 @@
 
 <script>
     const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyI9s9ngRvWrw5Sjb2__2RrbtyCoW4eSaOW7mI7mwyWV1G9S9ll0ETvbMdp7BoQgAqWRw/exec";
-    let centersList = [];
-    let clubTimeout = null;
 
+    const clubSelect = document.getElementById('clubInput');
+    const coachSelect = document.getElementById('coachInput');
+    let currentCoachesList = [];
+
+    // 1. تحميل كل المراكز عند فتح الصفحة
     fetch(`${SCRIPT_WEB_APP_URL}?action=getAllCenters`)
         .then(r => r.json())
-        .then(res => { centersList = res.centers || []; })
+        .then(res => {
+            const centers = res.centers || [];
+            centers.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                clubSelect.appendChild(opt);
+            });
+        })
         .catch(() => {});
 
-    const clubInput = document.getElementById('clubInput');
-    const suggestBox = document.getElementById('clubSuggestions');
+    // 2. عند اختيار المركز، نجلب قائمة المدربين الخاصة به فقط
+    clubSelect.addEventListener('change', () => {
+        const club = clubSelect.value;
+        coachSelect.innerHTML = '';
+        currentCoachesList = [];
 
-    clubInput.addEventListener('input', () => {
-        clearTimeout(clubTimeout);
-        const val = clubInput.value.trim().toLowerCase();
-        if (val.length < 1) { suggestBox.style.display = 'none'; return; }
-        clubTimeout = setTimeout(() => {
-            const matches = centersList.filter(c => c.toLowerCase().includes(val)).slice(0, 8);
-            if (matches.length > 0) {
-                suggestBox.innerHTML = matches.map(m => `<div onclick="selectClub('${m.replace(/'/g,"\\'")}')">${m}</div>`).join('');
-                suggestBox.style.display = 'block';
-            } else {
-                suggestBox.style.display = 'none';
-            }
-        }, 150);
-    });
+        if (!club) {
+            coachSelect.disabled = true;
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = '-- اختر المركز أولاً --';
+            coachSelect.appendChild(opt);
+            return;
+        }
 
-    function selectClub(name) {
-        clubInput.value = name;
-        suggestBox.style.display = 'none';
-    }
+        coachSelect.disabled = true;
+        coachSelect.innerHTML = '<option value="">جاري التحميل...</option>';
 
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.autocomplete-box')) suggestBox.style.display = 'none';
+        fetch(`${SCRIPT_WEB_APP_URL}?action=searchCenter&club=${encodeURIComponent(club)}`)
+            .then(r => r.json())
+            .then(res => {
+                coachSelect.innerHTML = '';
+                if (res && res.found && res.coaches && res.coaches.length > 0) {
+                    currentCoachesList = res.coaches;
+                    const defaultOpt = document.createElement('option');
+                    defaultOpt.value = '';
+                    defaultOpt.textContent = '-- اختر المدرب --';
+                    coachSelect.appendChild(defaultOpt);
+
+                    currentCoachesList.forEach(cItem => {
+                        const opt = document.createElement('option');
+                        opt.value = cItem.coach;
+                        opt.textContent = cItem.coach;
+                        coachSelect.appendChild(opt);
+                    });
+                    coachSelect.disabled = false;
+                } else {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'لا يوجد مدربون لهذا المركز';
+                    coachSelect.appendChild(opt);
+                    coachSelect.disabled = true;
+                }
+            })
+            .catch(() => {
+                coachSelect.innerHTML = '<option value="">تعذر تحميل المدربين</option>';
+                coachSelect.disabled = true;
+            });
     });
 
     document.getElementById('checkBtn').addEventListener('click', () => {
-        const club = clubInput.value.trim();
-        const coach = document.getElementById('coachInput').value.trim();
+        const club = clubSelect.value.trim();
+        const coach = coachSelect.value.trim();
         const phone = document.getElementById('phoneInput').value.trim();
         const errBox = document.getElementById('errBox');
         errBox.style.display = 'none';
