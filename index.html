@@ -437,6 +437,7 @@ fetch(`${SCRIPT_WEB_APP_URL}?action=getAllCompetitions`)
         opt.value = comp.name;
         opt.textContent = comp.name;
         opt.dataset.date = comp.date;
+        opt.dataset.banner = comp.banner || '';
         select.appendChild(opt);
       });
     } else {
@@ -480,6 +481,17 @@ document.getElementById('competitionSelect').addEventListener('change', function
     startCountdown(dateStr);
   } else {
     stopCountdown();
+  }
+      // عرض البطاقة التقنية
+  const bannerUrl = selectedOpt.dataset.banner;
+  const bannerBox = document.getElementById('competitionBanner');
+  const bannerImg = document.getElementById('compBannerImg');
+  
+  if (bannerUrl) {
+    bannerImg.src = bannerUrl;
+    bannerBox.style.display = 'block';
+  } else {
+    bannerBox.style.display = 'none';
   }
 });
         // ============================================
