@@ -151,6 +151,27 @@
         <img src="https://i.postimg.cc/FHFhGD6k/Whats-App-Image-2026-09-03-at-21-17-15.jpg" alt="شعار مسابقة موجة البحر للسوروبان" class="logo">
         <h1 id="mainCompTitle">منصة التسجيل وتحديث البيانات لمسابقات موجة البحر</h1>
         <p id="mainCompSubtitle"><i class="fa-solid fa-trophy"></i> اختر المسابقة من الأسفل للتسجيل</p>
+        <!-- ====== العداد التنازلي ====== -->
+<div id="countdownContainer" style="display:none; margin-top: 15px;">
+    <div style="display: inline-flex; gap: 10px; background: rgba(255,255,255,0.15); padding: 10px 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+        <div style="text-align:center; min-width: 60px;">
+            <div id="cdDays" style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;">0</div>
+            <div style="font-size: 0.75rem; color: #bae6fd;">يوم</div>
+        </div>
+        <div style="text-align:center; min-width: 60px;">
+            <div id="cdHours" style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;">0</div>
+            <div style="font-size: 0.75rem; color: #bae6fd;">ساعة</div>
+        </div>
+        <div style="text-align:center; min-width: 60px;">
+            <div id="cdMinutes" style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;">0</div>
+            <div style="font-size: 0.75rem; color: #bae6fd;">دقيقة</div>
+        </div>
+        <div style="text-align:center; min-width: 60px;">
+            <div id="cdSeconds" style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;">0</div>
+            <div style="font-size: 0.75rem; color: #bae6fd;">ثانية</div>
+        </div>
+    </div>
+</div>
     </header>
 
     <div class="container">
@@ -454,7 +475,62 @@ document.getElementById('competitionSelect').addEventListener('change', function
   } else {
     subtitle.innerHTML = '<i class="fa-solid fa-trophy"></i> اختر المسابقة من الأسفل للتسجيل';
   }
+      // تشغيل العداد التنازلي
+  if (dateStr) {
+    startCountdown(dateStr);
+  } else {
+    stopCountdown();
+  }
 });
+        // ============================================
+// العداد التنازلي
+// ============================================
+let countdownInterval = null;
+
+function startCountdown(targetDateStr) {
+  const container = document.getElementById('countdownContainer');
+  container.style.display = 'block';
+  
+  // إيقاف أي عداد سابق
+  if (countdownInterval) clearInterval(countdownInterval);
+  
+  const targetDate = new Date(targetDateStr + 'T00:00:00').getTime();
+  
+  function updateCountdown() {
+    const now = new Date().getTime();
+    const distance = targetDate - now;
+    
+    if (distance < 0) {
+      document.getElementById('cdDays').textContent = '0';
+      document.getElementById('cdHours').textContent = '0';
+      document.getElementById('cdMinutes').textContent = '0';
+      document.getElementById('cdSeconds').textContent = '0';
+      clearInterval(countdownInterval);
+      return;
+    }
+    
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    
+    document.getElementById('cdDays').textContent = days;
+    document.getElementById('cdHours').textContent = hours;
+    document.getElementById('cdMinutes').textContent = minutes;
+    document.getElementById('cdSeconds').textContent = seconds;
+  }
+  
+  updateCountdown();
+  countdownInterval = setInterval(updateCountdown, 1000);
+}
+
+function stopCountdown() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  document.getElementById('countdownContainer').style.display = 'none';
+}
         let centerTimeout = null;
         let studentTimeout = null;
         let currentCoachesList = [];
