@@ -65,21 +65,62 @@
     </div>
 
     <div id="resultCard" style="display:none;">
-        <div class="stats-grid" id="statsGrid"></div>
-        <div class="card">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>اللقب</th><th>الاسم</th><th>تاريخ الميلاد</th><th>المستوى</th>
-                            <th>نوع المشاركة</th><th>لعبة الذكاء</th><th>فلاش أنزان</th><th>الأكواب السريعة</th>
-                        </tr>
-                    </thead>
-                    <tbody id="studentsBody"></tbody>
-                </table>
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- ====== قسم رفع صورة الوصل ====== -->
+    <div class="card" style="border-right: 4px solid #d97706; margin-bottom: 20px;">
+        <h3 style="color:#0369a1; margin-bottom:15px; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-file-invoice"></i> تأكيد التسجيلات - رفع صورة الوصل (إثبات الدفع)
+        </h3>
+
+        <div style="background:#fef2f2; border-right:4px solid #dc2626; padding:10px; border-radius:6px; margin-bottom:15px; font-size:0.85rem; color:#991b1b;">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+            <strong>مهم:</strong> يجب رفع صورة الوصل (إثبات الدفع) قبل تأكيد التسجيلات.
+        </div>
+
+        <div id="voucherStatus" style="display:none; background:#f0fdf4; border-right:4px solid #059669; padding:12px; border-radius:6px; margin-bottom:15px;">
+            <strong style="color:#166534;">✅ تم رفع الصورة بنجاح:</strong>
+            <span id="voucherFileName" style="color:#166534;"></span>
+            <div style="margin-top:8px;">
+                <img id="voucherPreview" src="" style="max-width:200px; max-height:150px; border-radius:6px; cursor:pointer;" onclick="window.open(this.src, '_blank')">
             </div>
         </div>
+
+        <label style="display:block; margin-bottom:8px; font-weight:700; color:#475569;">
+            اختر صورة الوصل:
+        </label>
+        <input type="file" id="voucherFile" accept="image/*" style="width:100%; padding:10px; border:2px dashed #cbd5e1; border-radius:8px; margin-bottom:15px; cursor:pointer;">
+
+        <button type="button" onclick="uploadVoucher()" style="background:#059669; color:white; border:none; padding:12px 24px; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-upload"></i> رفع صورة الوصل
+        </button>
+
+        <div id="uploadMsg" style="display:none; margin-top:12px; padding:10px; border-radius:6px; font-weight:700;"></div>
     </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+               
+                    <thead>
+                    <tr>
+                        <th>اللقب</th><th>الاسم</th><th>تاريخ الميلاد</th><th>المستوى</th>
+                        <th>نوع المشاركة</th><th>لعبة الذكاء</th><th>فلاش أنزان</th><th>الأكواب السريعة</th>
+                        <th>حالة التأكيد</th><th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsBody"></tbody>
+            </table>
+        </div>
+
+        <!-- زر تأكيد الجميع -->
+        <div style="margin-top:20px; text-align:center;">
+            <button type="button" onclick="confirmAllStudents()" id="confirmAllBtn" style="background:#0284c7; color:white; border:none; padding:14px 30px; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-check-double"></i> تأكيد جميع التلاميذ
+            </button>
+        </div>
+    </div>
+</div>
 </div>
 
 <script>
@@ -88,6 +129,11 @@
     const clubSelect = document.getElementById('clubInput');
     const coachSelect = document.getElementById('coachInput');
     let currentCoachesList = [];
+
+    // متغيرات التأكيد
+    let uploadedVoucherUrl = "";
+    let uploadedVoucherName = "";
+    let currentStudentsList = [];
 
     // 1. تحميل كل المراكز عند فتح الصفحة
     fetch(`${SCRIPT_WEB_APP_URL}?action=getAllCenters`)
@@ -212,32 +258,208 @@
     });
 
     function renderResults(res) {
-        const s = res.stats;
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-box"><div class="num">${s.total}</div><div class="lbl">إجمالي المشاركين</div></div>
-            <div class="stat-box"><div class="num">${s.presentiel}</div><div class="lbl">حضوري</div></div>
-            <div class="stat-box"><div class="num">${s.online}</div><div class="lbl">أون لاين</div></div>
-            <div class="stat-box"><div class="num">${s.smartGames}</div><div class="lbl">ألعاب الذكاء</div></div>
-            <div class="stat-box"><div class="num">${s.cups}</div><div class="lbl">الأكواب السريعة</div></div>
-            <div class="stat-box"><div class="num">${s.flashAnzan}</div><div class="lbl">فلاش أنزان</div></div>
+    const s = res.stats;
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-box"><div class="num">${s.total}</div><div class="lbl">إجمالي المشاركين</div></div>
+        <div class="stat-box"><div class="num">${s.presentiel}</div><div class="lbl">حضوري</div></div>
+        <div class="stat-box"><div class="num">${s.online}</div><div class="lbl">أون لاين</div></div>
+        <div class="stat-box"><div class="num">${s.smartGames}</div><div class="lbl">ألعاب الذكاء</div></div>
+        <div class="stat-box"><div class="num">${s.cups}</div><div class="lbl">الأكواب السريعة</div></div>
+        <div class="stat-box"><div class="num">${s.flashAnzan}</div><div class="lbl">فلاش أنزان</div></div>
+    `;
+
+    const body = document.getElementById('studentsBody');
+    body.innerHTML = res.students.map(st => {
+        const isConfirmed = st.confirmStatus === "مؤكد";
+        const statusBadge = isConfirmed 
+            ? '<span style="background:#10b981; color:white; padding:4px 10px; border-radius:6px; font-size:0.8rem; font-weight:700;">✅ مؤكد</span>'
+            : '<span style="background:#f59e0b; color:white; padding:4px 10px; border-radius:6px; font-size:0.8rem; font-weight:700;">⏳ غير مؤكد</span>';
+        
+        const actionBtn = isConfirmed
+            ? '<span style="color:#64748b; font-size:0.85rem;">تم التأكيد</span>'
+            : `<button onclick="confirmStudent(${st.rowIndex}, '${st.lastName}', '${st.firstName}')" style="background:#0284c7; color:white; border:none; padding:6px 12px; border-radius:6px; font-size:0.8rem; font-weight:700; cursor:pointer;">📎 تأكيد التسجيل</button>`;
+
+        return `
+        <tr>
+            <td>${st.lastName}</td>
+            <td>${st.firstName}</td>
+            <td>${st.birth}</td>
+            <td>${st.level || '-'}</td>
+            <td>${st.attendanceType}</td>
+            <td>${st.smartGame || 'بدون مشاركة'}</td>
+            <td>${st.flashAnzan ? '✅ نعم' : '❌ لا'}</td>
+            <td>${st.cups ? '✅ نعم' : '❌ لا'}</td>
+            <td>${statusBadge}</td>
+            <td>${actionBtn}</td>
+        </tr>
         `;
+    }).join('');
 
-        const body = document.getElementById('studentsBody');
-        body.innerHTML = res.students.map(st => `
-            <tr>
-                <td>${st.lastName}</td>
-                <td>${st.firstName}</td>
-                <td>${st.birth}</td>
-                <td>${st.level || '-'}</td>
-                <td>${st.attendanceType}</td>
-                <td>${st.smartGame || 'بدون مشاركة'}</td>
-                <td>${st.flashAnzan ? '✅ نعم' : '❌ لا'}</td>
-                <td>${st.cups ? '✅ نعم' : '❌ لا'}</td>
-            </tr>
-        `).join('');
-
-        document.getElementById('resultCard').style.display = 'block';
+        // حفظ قائمة التلاميذ للتأكيد الجماعي
+    currentStudentsList = res.students;
+    document.getElementById('resultCard').style.display = 'block';
+}
+// ============================================
+// رفع صورة الوصل
+// ============================================
+document.getElementById('voucherFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            document.getElementById('voucherPreview').src = event.target.result;
+            document.getElementById('voucherFileName').textContent = file.name;
+            document.getElementById('voucherStatus').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
     }
+});
+
+function uploadVoucher() {
+    const fileInput = document.getElementById('voucherFile');
+    const file = fileInput.files[0];
+    const msgBox = document.getElementById('uploadMsg');
+
+    msgBox.style.display = 'none';
+
+    if (!file) {
+        msgBox.textContent = '⚠️ يرجى اختيار صورة الوصل أولاً.';
+        msgBox.style.background = '#fef2f2';
+        msgBox.style.color = '#991b1b';
+        msgBox.style.display = 'block';
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        msgBox.textContent = '⚠️ حجم الصورة كبير جداً. الحد الأقصى 5 ميغابايت.';
+        msgBox.style.background = '#fef2f2';
+        msgBox.style.color = '#991b1b';
+        msgBox.style.display = 'block';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const base64Data = event.target.result.split(',')[1];
+        const fileName = 'voucher_' + Date.now() + '_' + file.name;
+
+        msgBox.textContent = '⏳ جاري رفع الصورة...';
+        msgBox.style.background = '#eff6ff';
+        msgBox.style.color = '#1e40af';
+        msgBox.style.display = 'block';
+
+        const params = new URLSearchParams({
+            action: 'uploadVoucherToDrive',
+            fileName: fileName,
+            fileData: base64Data,
+            mimeType: file.type
+        });
+
+        fetch(SCRIPT_WEB_APP_URL + '?' + params.toString())
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    uploadedVoucherUrl = res.fileUrl;
+                    uploadedVoucherName = fileName;
+                    msgBox.textContent = '✅ تم رفع الصورة بنجاح! يمكنك الآن تأكيد التسجيلات.';
+                    msgBox.style.background = '#f0fdf4';
+                    msgBox.style.color = '#166534';
+                    msgBox.style.display = 'block';
+                } else {
+                    msgBox.textContent = '❌ فشل الرفع: ' + (res.error || 'خطأ غير معروف');
+                    msgBox.style.background = '#fef2f2';
+                    msgBox.style.color = '#991b1b';
+                    msgBox.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                msgBox.textContent = '❌ خطأ في الاتصال: ' + err.message;
+                msgBox.style.background = '#fef2f2';
+                msgBox.style.color = '#991b1b';
+                msgBox.style.display = 'block';
+            });
+    };
+    reader.readAsDataURL(file);
+}
+
+// ============================================
+// تأكيد تلميذ واحد
+// ============================================
+function confirmStudent(rowIndex, lastName, firstName) {
+    if (!uploadedVoucherUrl) {
+        alert('⚠️ يجب رفع صورة الوصل أولاً قبل تأكيد التسجيلات!');
+        return;
+    }
+
+    if (!confirm('هل أنت متأكد من تأكيد تسجيل: ' + lastName + ' ' + firstName + '؟')) {
+        return;
+    }
+
+    fetch(`${SCRIPT_WEB_APP_URL}?action=confirmStudentRow&rowIndex=${rowIndex}&voucherUrl=${encodeURIComponent(uploadedVoucherUrl)}`)
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                alert('✅ تم تأكيد تسجيل: ' + lastName + ' ' + firstName);
+                document.getElementById('checkBtn').click();
+            } else {
+                alert('❌ فشل التأكيد: ' + (res.error || 'خطأ غير معروف'));
+            }
+        })
+        .catch(err => {
+            alert('❌ خطأ في الاتصال: ' + err.message);
+        });
+}
+
+// ============================================
+// تأكيد جميع التلاميذ
+// ============================================
+function confirmAllStudents() {
+    if (!uploadedVoucherUrl) {
+        alert('⚠️ يجب رفع صورة الوصل أولاً قبل تأكيد التسجيلات!');
+        return;
+    }
+
+    if (!currentStudentsList || currentStudentsList.length === 0) {
+        alert('⚠️ لا يوجد تلاميذ للتأكيد.');
+        return;
+    }
+
+    if (!confirm('هل أنت متأكد من تأكيد تسجيل جميع التلاميذ (' + currentStudentsList.length + ' تلميذ)؟')) {
+        return;
+    }
+
+    const rowIndices = currentStudentsList
+        .filter(st => st.confirmStatus !== "مؤكد")
+        .map(st => st.rowIndex);
+
+    if (rowIndices.length === 0) {
+        alert('✅ جميع التلاميذ مؤكدون بالفعل.');
+        return;
+    }
+
+    const btn = document.getElementById('confirmAllBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التأكيد...';
+
+    fetch(`${SCRIPT_WEB_APP_URL}?action=confirmAllStudents&rowIndices=${rowIndices.join(',')}&voucherUrl=${encodeURIComponent(uploadedVoucherUrl)}`)
+        .then(r => r.json())
+        .then(res => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check-double"></i> تأكيد جميع التلاميذ';
+
+            if (res.success) {
+                alert('✅ تم تأكيد تسجيل ' + res.count + ' تلميذ بنجاح!');
+                document.getElementById('checkBtn').click();
+            } else {
+                alert('❌ فشل التأكيد: ' + (res.error || 'خطأ غير معروف'));
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check-double"></i> تأكيد جميع التلاميذ';
+            alert('❌ خطأ في الاتصال: ' + err.message);
+        });
+}
 </script>
 </body>
 </html>
