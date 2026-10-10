@@ -196,13 +196,7 @@
         <div id="competitionInfo" style="display:none; margin-top:10px; padding:10px; background:#fffbeb; border-right:3px solid #d97706; border-radius:6px; font-size:0.88rem; color:#92400e;">
             <strong>📅 تاريخ المسابقة:</strong> <span id="compDateText"></span>
         </div>
-        <div id="competitionBanner" style="display:none; margin-top:12px; text-align:center;">
-    <img id="compBannerImg" src="" alt="البطاقة التقنية للمسابقة" style="max-width:100%; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.15); cursor:pointer;" onclick="openBannerFull()">
-    <p style="font-size:0.8rem; color:#64748b; margin-top:6px;">
-        <i class="fa-solid fa-magnifying-glass-plus"></i> اضغط على الصورة لعرضها بالحجم الكامل
-    </p>
-</div>
-    </div>
+        </div>
 </div>
                     <div class="form-group full-width">
                         <div class="section-box" style="border-right: 4px solid var(--primary);">
@@ -443,7 +437,6 @@ fetch(`${SCRIPT_WEB_APP_URL}?action=getAllCompetitions`)
         opt.value = comp.name;
         opt.textContent = comp.name;
         opt.dataset.date = comp.date;
-        opt.dataset.banner = comp.banner || '';
         select.appendChild(opt);
       });
     } else {
@@ -487,17 +480,6 @@ document.getElementById('competitionSelect').addEventListener('change', function
     startCountdown(dateStr);
   } else {
     stopCountdown();
-  }
-      // عرض البطاقة التقنية
-  const bannerUrl = selectedOpt.dataset.banner;
-  const bannerBox = document.getElementById('competitionBanner');
-  const bannerImg = document.getElementById('compBannerImg');
-  
-  if (bannerUrl) {
-    bannerImg.src = bannerUrl;
-    bannerBox.style.display = 'block';
-  } else {
-    bannerBox.style.display = 'none';
   }
 });
         // ============================================
@@ -549,13 +531,6 @@ function stopCountdown() {
   }
   document.getElementById('countdownContainer').style.display = 'none';
   }
-   // فتح الصورة بحجم كامل
-function openBannerFull() {
-  const img = document.getElementById('compBannerImg');
-  if (img && img.src) {
-    window.open(img.src, '_blank');
-  }
-}     
         let centerTimeout = null;
         let studentTimeout = null;
         let currentCoachesList = [];
