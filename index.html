@@ -401,6 +401,60 @@
         // ضع هنا رابط Web App الخاص بك بعد النشر
         const SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwIk62p19JWRBhTEbRAD7lF7KYENPjke4vp4Zuo6BaXzcwyRMcDYt77Ro1JVGGcG_c9pQ/exec";
 
+// ============================================
+// تحميل قائمة المسابقات المفتوحة
+// ============================================
+fetch(`${SCRIPT_WEB_APP_URL}?action=getAllCompetitions`)
+  .then(r => r.json())
+  .then(res => {
+    const select = document.getElementById('competitionSelect');
+    select.innerHTML = '<option value="">-- اختر المسابقة --</option>';
+
+    if (res.competitions && res.competitions.length > 0) {
+      res.competitions.forEach(comp => {
+        const opt = document.createElement('option');
+        opt.value = comp.name;
+        opt.textContent = comp.name;
+        opt.dataset.date = comp.date;
+        select.appendChild(opt);
+      });
+    } else {
+      select.innerHTML = '<option value="">لا توجد مسابقات مفتوحة حالياً</option>';
+    }
+  })
+  .catch(err => {
+    console.error('فشل تحميل المسابقات:', err);
+    document.getElementById('competitionSelect').innerHTML = '<option value="">تعذر تحميل المسابقات</option>';
+  });
+
+// ============================================
+// عرض تاريخ المسابقة عند اختيارها
+// ============================================
+document.getElementById('competitionSelect').addEventListener('change', function() {
+  const selectedOpt = this.options[this.selectedIndex];
+  const dateStr = selectedOpt.dataset.date;
+  const infoBox = document.getElementById('competitionInfo');
+  const compName = this.value;
+  const subtitle = document.getElementById('mainCompSubtitle');
+
+  // عرض تاريخ المسابقة
+  if (dateStr) {
+    const parts = dateStr.split('-');
+    const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('compDateText').textContent = dateObj.toLocaleDateString('ar-DZ', options);
+    infoBox.style.display = 'block';
+  } else {
+    infoBox.style.display = 'none';
+  }
+
+  // تحديث العنوان الفرعي باسم المسابقة
+  if (compName) {
+    subtitle.innerHTML = '<i class="fa-solid fa-trophy"></i> ' + compName;
+  } else {
+    subtitle.innerHTML = '<i class="fa-solid fa-trophy"></i> اختر المسابقة من الأسفل للتسجيل';
+  }
+});
         let centerTimeout = null;
         let studentTimeout = null;
         let currentCoachesList = [];
@@ -713,9 +767,9 @@
                 activeCoach = coachSelect.options[coachSelect.selectedIndex].text;
             }
 
+            const selectedCompetition = document.getElementById('competitionSelect').value;
             const payload = {
-                compTitle: document.getElementById('mainCompTitle').innerText,
-                compDate: "19/09/2026",
+                competition: selectedCompetition,
                 attendanceType: selectedAttendance ? selectedAttendance.value : "حضوري",
                 club: document.getElementById('club').value.trim(),
                 coach: activeCoach,
