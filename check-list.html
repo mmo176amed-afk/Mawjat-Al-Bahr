@@ -348,15 +348,20 @@ function uploadVoucher() {
         msgBox.style.color = '#1e40af';
         msgBox.style.display = 'block';
 
-        const params = new URLSearchParams({
-            action: 'uploadVoucherToDrive',
-            fileName: fileName,
-            fileData: base64Data,
-            mimeType: file.type
-        });
+       const payload = {
+    action: 'uploadVoucherToDrive',
+    fileName: fileName,
+    fileData: base64Data,
+    mimeType: file.type
+};
 
-        fetch(SCRIPT_WEB_APP_URL + '?' + params.toString())
-            .then(r => r.json())
+fetch(SCRIPT_WEB_APP_URL, {
+    method: 'POST',
+    mode: 'cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+})
+    .then(r => r.json())
             .then(res => {
                 if (res.success) {
                     uploadedVoucherUrl = res.fileUrl;
@@ -395,7 +400,16 @@ function confirmStudent(rowIndex, lastName, firstName) {
         return;
     }
 
-    fetch(`${SCRIPT_WEB_APP_URL}?action=confirmStudentRow&rowIndex=${rowIndex}&voucherUrl=${encodeURIComponent(uploadedVoucherUrl)}`)
+        fetch(SCRIPT_WEB_APP_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+            action: 'confirmStudentRow',
+            rowIndex: rowIndex,
+            voucherUrl: uploadedVoucherUrl
+        })
+    })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -441,7 +455,16 @@ function confirmAllStudents() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التأكيد...';
 
-    fetch(`${SCRIPT_WEB_APP_URL}?action=confirmAllStudents&rowIndices=${rowIndices.join(',')}&voucherUrl=${encodeURIComponent(uploadedVoucherUrl)}`)
+        fetch(SCRIPT_WEB_APP_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+            action: 'confirmAllStudents',
+            rowIndices: rowIndices.join(','),
+            voucherUrl: uploadedVoucherUrl
+        })
+    })
         .then(r => r.json())
         .then(res => {
             btn.disabled = false;
